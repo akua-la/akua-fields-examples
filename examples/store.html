@@ -89,8 +89,10 @@
     var msg = document.getElementById('msg'), out = document.getElementById('out'), pay = document.getElementById('pay');
     var sf = AkuaFields.mount('#akua-card', {
       apiBase: window.AKUA_SF_BASE,
+      // White-label: los campos toman la marca de este cliente (color + fuente)
+      // desde su brand config. Cambialo por el brandClientId (cli-…) de tu cliente.
+      brandClientId: window.AKUA_BRAND_CLIENT_ID || 'cli-d6u5i86oac8gglnedq10',
       amount: 100000, currency: 'COP',
-      accent: getComputedStyle(document.documentElement).getPropertyValue('--brand').trim(),
       orderId: 'store-' + Date.now(),
       onReady:    function () { pay.disabled = false; },
       onValidity: function (ok) { pay.disabled = !ok; },

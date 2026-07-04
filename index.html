@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Akua Smart Fields — Ejemplos</title>
+  <title>Akua Fields — Ejemplos</title>
   <style>
     :root { --accent: #0e8c7f; }
     * { box-sizing: border-box; }
@@ -25,7 +25,7 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="eyebrow">Akua · Smart Fields</div>
+    <div class="eyebrow">Akua · Fields</div>
     <h1>Ejemplos de integración</h1>
     <p class="lede">Campos de tarjeta embebidos en tu propio checkout, con aislamiento
     cross-origin (el PAN nunca toca tu página → tu comercio queda en SAQ A). El pago
@@ -45,7 +45,7 @@
 
     <div class="flow">
       <strong>Cómo funciona</strong> — cada ejemplo incluye
-      <code>&lt;script src="…/smartfields.js"&gt;</code> desde el servicio de Smart Fields,
+      <code>&lt;script src="…/akua-fields.js"&gt;</code> desde el servicio de Akua Fields,
       monta <code>#akua-card</code> (un iframe de ese dominio) en tu layout, y tu botón llama
       <code>sf.pay()</code>. El SDK tokeniza la tarjeta (directo a Akua) y cobra por Connect Hub.
       Tu página nunca ve el número de tarjeta.

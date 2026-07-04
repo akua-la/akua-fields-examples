@@ -62,7 +62,7 @@
     </div>
 
     <!-- Columna derecha: TU form de pago. Los datos del comprador son tuyos;
-         solo la tarjeta es el iframe de Smart Fields. -->
+         solo la tarjeta es el iframe de Akua Fields. -->
     <div class="panel">
       <h1>Finalizar compra</h1>
       <p class="sub">Pago seguro — tus datos de tarjeta los protege Akua</p>
@@ -81,10 +81,10 @@
   </div>
 
   <script src="../config.js"></script>
-  <script>document.write('<scr'+'ipt src="'+window.AKUA_SF_BASE+'/smartfields.js"><\/scr'+'ipt>');</script>
+  <script>document.write('<scr'+'ipt src="'+window.AKUA_SF_BASE+'/akua-fields.js"><\/scr'+'ipt>');</script>
   <script>
     var msg = document.getElementById('msg'), out = document.getElementById('out'), pay = document.getElementById('pay');
-    var sf = AkuaSmartFields.mount('#akua-card', {
+    var sf = AkuaFields.mount('#akua-card', {
       apiBase: window.AKUA_SF_BASE,
       amount: 100000, currency: 'COP',
       accent: getComputedStyle(document.documentElement).getPropertyValue('--brand').trim(),

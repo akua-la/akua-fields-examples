@@ -67,6 +67,9 @@
       <h1>Finalizar compra</h1>
       <p class="sub">Pago seguro — tus datos de tarjeta los protege Akua</p>
 
+      <label class="blk">Nombre</label>
+      <input class="txt" id="cust-name" placeholder="Tu nombre" value="Cliente Demo">
+
       <label class="blk">Email</label>
       <input class="txt" id="email" type="email" placeholder="vos@email.com" value="cliente@example.com">
 
@@ -94,14 +97,23 @@
       onResult:   function (r) {
         out.textContent = JSON.stringify(r, null, 2);
         if (r.status === 'APPROVED' || r.status === 'AUTHORIZED') {
-          msg.className = 'msg ok'; msg.textContent = '✅ ¡Compra confirmada! Pago ' + r.status + ' · ' + r.payment_id;
+          var u = r.user_id ? ' · cliente ' + r.user_id : '';
+          msg.className = 'msg ok'; msg.textContent = '✅ ¡Compra confirmada! Pago ' + r.status + u;
         } else {
           msg.className = 'msg err'; msg.textContent = '❌ ' + (r.message || r.error || r.status || 'Pago rechazado');
         }
         pay.disabled = false; pay.textContent = 'Pagar $ 100.000';
       },
     });
-    pay.onclick = function () { pay.disabled = true; pay.textContent = 'Procesando…'; msg.className = 'msg'; sf.pay(); };
+    pay.onclick = function () {
+      pay.disabled = true; pay.textContent = 'Procesando…'; msg.className = 'msg';
+      // La info del usuario viaja en el pago → Akua crea el usuario y le asigna
+      // la tarjeta tokenizada. Es OPCIONAL: sin esto, el pago funciona igual.
+      sf.pay({ user: {
+        name: document.getElementById('cust-name').value,
+        email: document.getElementById('email').value,
+      } });
+    };
   </script>
 </body>
 </html>

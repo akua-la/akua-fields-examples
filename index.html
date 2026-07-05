@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Akua Fields — Ejemplos</title>
+  <style>
+    :root { --accent: #0e8c7f; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #fbfcfd; color: #0e1b25; margin: 0; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 56px 20px 80px; }
+    .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--accent); font-weight: 700; }
+    h1 { font-size: 34px; margin: 8px 0 12px; letter-spacing: -.02em; }
+    .lede { font-size: 17px; color: #6b7b87; max-width: 62ch; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin-top: 36px; }
+    a.card { display: block; text-decoration: none; color: inherit; background: #fff; border: 1px solid #e3e9ec;
+      border-radius: 14px; padding: 22px; transition: border-color .15s, transform .15s; }
+    a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card h3 { margin: 0 0 6px; font-size: 17px; }
+    .card p { margin: 0; font-size: 14px; color: #6b7b87; }
+    .flow { margin-top: 40px; background: #eef6f4; border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 16px 20px; font-size: 14px; }
+    code { font-family: ui-monospace, Menlo, monospace; font-size: .88em; background: #e6f4f2; padding: .12em .38em; border-radius: 4px; }
+    .foot { margin-top: 48px; font-size: 12.5px; color: #6b7b87; border-top: 1px solid #e3e9ec; padding-top: 18px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">Akua · Fields</div>
+    <h1>Ejemplos de integración</h1>
+    <p class="lede">Campos de tarjeta embebidos en tu propio checkout, con aislamiento
+    cross-origin (el PAN nunca toca tu página → tu comercio queda en SAQ A). El pago
+    se rutea por Connect Hub. Elegí un ejemplo y mirá el código fuente — cada uno es
+    una página estática autocontenida que podés copiar y customizar.</p>
+
+    <div class="grid">
+      <a class="card" href="examples/store.html">
+        <h3>🛍️ Tienda con marca</h3>
+        <p>Checkout completo, brandeable (colores, logo, copy). El que copiás para armar tu experiencia.</p>
+      </a>
+      <a class="card" href="examples/minimal.html">
+        <h3>⚡ Mínimo</h3>
+        <p>Lo más chico posible: montar los campos, un botón, y pagar. ~30 líneas.</p>
+      </a>
+    </div>
+
+    <div class="flow">
+      <strong>Cómo funciona</strong> — cada ejemplo incluye
+      <code>&lt;script src="…/akua-fields.js"&gt;</code> desde el servicio de Akua Fields,
+      monta <code>#akua-card</code> (un iframe de ese dominio) en tu layout, y tu botón llama
+      <code>sf.pay()</code>. El SDK tokeniza la tarjeta (directo a Akua) y cobra por Connect Hub.
+      Tu página nunca ve el número de tarjeta.
+    </div>
+
+    <div class="foot">
+      Apuntá los ejemplos a tu deploy editando <code>config.js</code>
+      (<code>window.AKUA_SF_BASE</code>). Sandbox: tarjeta <code>4111 1111 1111 1111</code>, venc <code>12/30</code>.
+    </div>
+  </div>
+</body>
+</html>

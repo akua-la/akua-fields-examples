@@ -22,9 +22,12 @@
   <!-- 2. cargá el SDK desde ese servicio -->
   <script>document.write('<scr'+'ipt src="'+window.AKUA_SF_BASE+'/akua-fields.js"><\/scr'+'ipt>');</script>
   <script>
-    // 3. montá los campos (iframe cross-origin) y conectá tu botón
+    // 3. montá los campos. El JWT lo mintea TU backend; acá lo tomás de
+    //    ?token=<jwt> o de window.AKUA_TOKEN. Los fields no mintean tokens.
+    var TOKEN = new URLSearchParams(location.search).get('token') || window.AKUA_TOKEN || '';
     var sf = AkuaFields.mount('#akua-card', {
       apiBase: window.AKUA_SF_BASE,
+      token: TOKEN,
       amount: 100000, currency: 'COP',
       onReady:    function () { pay.disabled = false; },
       onValidity: function (ok) { pay.disabled = !ok; },

@@ -87,11 +87,13 @@
   <script>document.write('<scr'+'ipt src="'+window.AKUA_SF_BASE+'/akua-fields.js"><\/scr'+'ipt>');</script>
   <script>
     var msg = document.getElementById('msg'), out = document.getElementById('out'), pay = document.getElementById('pay');
+    // El JWT lo mintea TU backend (client_credentials). Acá lo tomás de ?token=<jwt>
+    // o de window.AKUA_TOKEN. Los fields NO mintean tokens ni guardan credenciales.
+    var TOKEN = new URLSearchParams(location.search).get('token') || window.AKUA_TOKEN || '';
+    if (!TOKEN) { msg.className = 'msg err'; msg.textContent = 'Falta el token: abrí con ?token=<jwt> (lo mintea tu backend).'; }
     var sf = AkuaFields.mount('#akua-card', {
       apiBase: window.AKUA_SF_BASE,
-      // White-label: los campos toman la marca de este cliente (color + fuente)
-      // desde su brand config. Cambialo por el brandClientId (cli-…) de tu cliente.
-      brandClientId: window.AKUA_BRAND_CLIENT_ID || 'cli-d6u5i86oac8gglnedq10',
+      token: TOKEN,                   // JWT que minteó tu backend. La marca sale del token/dominio.
       amount: 100000, currency: 'COP',
       orderId: 'store-' + Date.now(),
       onReady:    function () { pay.disabled = false; },
@@ -107,14 +109,12 @@
         pay.disabled = false; pay.textContent = 'Pagar $ 100.000';
       },
     });
+    // userId OPCIONAL: el comercio crea el usuario en SU backend (con perfil completo)
+    // y pasa el usr-… acá (ej. ?userId=usr-…). Si viene, la tarjeta se le enrola.
+    var USER_ID = new URLSearchParams(location.search).get('userId') || '';
     pay.onclick = function () {
       pay.disabled = true; pay.textContent = 'Procesando…'; msg.className = 'msg';
-      // La info del usuario viaja en el pago → Akua crea el usuario y le asigna
-      // la tarjeta tokenizada. Es OPCIONAL: sin esto, el pago funciona igual.
-      sf.pay({ user: {
-        name: document.getElementById('cust-name').value,
-        email: document.getElementById('email').value,
-      } });
+      sf.pay(USER_ID ? { userId: USER_ID } : {});
     };
   </script>
 </body>

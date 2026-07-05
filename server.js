@@ -186,7 +186,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Checkout de ejemplo: http://localhost:${PORT}/`);
-  console.log(`Hub: ${HUB_BASE}`);
-  console.log(`Fields: ${FIELDS_BASE}`);
+  // No se loguea nada derivado de .env (ahí viven las credenciales). El fields
+  // base configurado se puede consultar en GET /config.js.
+  console.log('Checkout de ejemplo corriendo: http://localhost:' + server.address().port + '/');
 });

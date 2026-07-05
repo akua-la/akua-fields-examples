@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout de ejemplo — Akua Fields + tu backend local</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #eff0fb; margin: 0; color: #0e1b25; }
+    .page { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .cols { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+    .card { background: #fff; border-radius: 14px; padding: 28px; box-shadow: 0 4px 24px rgba(14,27,37,.06); flex: 1; min-width: 320px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    h2 { font-size: 15px; margin: 24px 0 12px; color: #3a4a56; }
+    h2:first-child { margin-top: 0; }
+    .sub { color: #6b7b87; font-size: 14px; margin: 0 0 24px; }
+    .flow { font-size: 12px; color: #6b7b87; background: #f4f6f7; border-radius: 8px; padding: 10px 12px; margin-bottom: 20px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eef0f2; font-size: 14px; }
+    .summary-row.total { font-weight: 700; border-bottom: none; font-size: 16px; padding-top: 16px; }
+    .brand { font-weight: 800; color: #e96024; font-size: 18px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #3a4a56; margin-bottom: 4px; }
+    input[type=text], input[type=email] {
+      width: 100%; box-sizing: border-box; font-size: 14px; padding: 10px 12px; margin-bottom: 12px;
+      border: 1px solid #d9e0e4; border-radius: 8px; outline: none; font-family: inherit;
+    }
+    .hint { background: #eef4fb; color: #2a5f8f; font-size: 12px; padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; }
+    .pay-btn { width: 100%; font-size: 15px; font-weight: 600; color: #fff; cursor: pointer; background: #e96024;
+      border: none; border-radius: 8px; padding: 12px; margin-top: 6px; }
+    .pay-btn:disabled { opacity: .5; cursor: default; }
+    .msg { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+    .msg.ok { display: block; background: #e6f5ee; color: #177a4c; }
+    .msg.err { display: block; background: #fbeae7; color: #b54b3a; }
+    pre { background: #0f1e28; color: #d8e4ea; border-radius: 10px; padding: 14px; font-size: 12px; overflow-x: auto; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="brand">Tienda Demo (local)</div>
+    <p class="sub">Los campos de tarjeta se cargan del deploy real
+      (configurable en <code>.env</code>) — los campos reales, aislados en iframe. El cobro por Connect Hub lo hace tu server local,
+      no el deploy.</p>
+    <div class="flow">
+      1) esta página pide el JWT a <code>/token</code> de tu server local (mint) →
+      2) el server local <strong>crea el usuario</strong> en Akua (<code>/user</code>) →
+      3) <code>sf.enroll({userId})</code> tokeniza + enrola la tarjeta a ese usuario
+      contra el servicio de fields (real) →
+      4) con el <code>instrument_id</code>, esta página llama a
+      <code>/pay-hub</code> de tu server, que cobra directo contra el Connect Hub.
+    </div>
+    <div class="cols">
+      <div class="card">
+        <h2>Resumen de tu orden</h2>
+        <div class="summary-row"><span>Auriculares inalámbricos</span><span>$ 180.000</span></div>
+        <div class="summary-row"><span>Envío</span><span>$ 12.000</span></div>
+        <div class="summary-row total"><span>Total</span><span>$ 192.000 COP</span></div>
+      </div>
+      <div class="card">
+        <h1>Pagar</h1>
+
+        <h2>Tus datos</h2>
+        <label for="cust-name">Nombre completo</label>
+        <input type="text" id="cust-name" value="Mariana Restrepo" autocomplete="name">
+        <label for="cust-email">Email</label>
+        <input type="email" id="cust-email" value="mariana.restrepo@gmail.com" autocomplete="email">
+
+        <h2>Tarjeta (SmartFields real)</h2>
+        <div class="hint">Modo demo (sandbox): tarjeta <strong>4111 1111 1111 1111</strong>,
+          vencimiento <strong>12/30</strong>, cualquier CVV y nombre → queda <strong>APPROVED</strong>.</div>
+        <div id="akua-card"></div>
+        <button class="pay-btn" id="pagar" disabled>Cargando…</button>
+        <div class="msg" id="msg"></div>
+        <pre id="result">// acá aparece: 1) el resultado del enroll (SmartFields), 2) el resultado del cobro (hub local)</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/config.js"></script>
+  <script>document.write('<scr'+'ipt src="'+window.AKUA_SF_BASE+'/akua-fields.js"><\/scr'+'ipt>');</script>
+  <script>
+    (function () {
+      var msg = document.getElementById('msg');
+      var btn = document.getElementById('pagar');
+      var result = document.getElementById('result');
+      var custName = document.getElementById('cust-name');
+      var custEmail = document.getElementById('cust-email');
+      var AMOUNT = 192000, CURRENCY = 'COP';
+      var sf, cardComplete = false, token = null;
+
+      function setMsg(cls, text) { msg.className = 'msg ' + cls; msg.textContent = text; }
+      function updateBtn() {
+        btn.disabled = !(cardComplete && custName.value.trim() && custEmail.value.trim());
+      }
+      custName.addEventListener('input', updateBtn);
+      custEmail.addEventListener('input', updateBtn);
+
+      // Mint LOCAL: el JWT lo mintea TU server (server.js) con tus credenciales.
+      fetch('/token').then(function (r) { return r.json(); }).then(function (t) {
+        if (!t.token) {
+          btn.textContent = 'No se pudo mintear el token';
+          setMsg('err', t.message || 'revisá DEMO_AKUA_CLIENT_ID/SECRET en .env');
+          return;
+        }
+        token = t.token;
+        sf = AkuaFields.mount('#akua-card', {
+          apiBase: window.AKUA_SF_BASE,
+          token: token,
+          accent: '#e96024',
+          onReady: function () { btn.textContent = 'Tokenizar y pagar'; updateBtn(); },
+          onValidity: function (complete) { cardComplete = complete; updateBtn(); },
+          onResult: function (r) { onEnrollResult(r); },
+        });
+      });
+
+      function onEnrollResult(r) {
+        result.textContent = 'enroll (SmartFields real):\n' + JSON.stringify(r, null, 2);
+        if (r.status !== 'ENROLLED' || !r.instrument_id) {
+          setMsg('err', 'No se pudo tokenizar: ' + (r.message || r.error || r.status || 'error'));
+          btn.disabled = false; btn.textContent = 'Reintentar';
+          return;
+        }
+        setMsg('ok', 'Tarjeta tokenizada en SmartFields real — instrumento ' + r.instrument_id +
+          (r.user_id ? ', usuario ' + r.user_id : ''));
+        btn.textContent = 'Cobrando por el hub (local)…';
+
+        fetch('/pay-hub', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: token, instrument_id: r.instrument_id,
+            amount: AMOUNT, currency: CURRENCY, orderId: 'local-' + Date.now(),
+          }),
+        }).then(function (res) { return res.json(); }).then(function (p) {
+          result.textContent = 'enroll (SmartFields real):\n' + JSON.stringify(r, null, 2) +
+            '\n\npago (Connect Hub, local):\n' + JSON.stringify(p, null, 2);
+          if (p.status === 'APPROVED' || p.status === 'AUTHORIZED') {
+            setMsg('ok', '¡Pago aprobado por el hub (local)! ' + (p.id || p.payment_id) + ' — ' + p.status);
+            btn.textContent = 'Pagado ✓';
+          } else if (p.status === 'ALREADY_PROCESSED') {
+            setMsg('ok', p.message);
+            btn.textContent = 'Pagado ✓ (confirmado en reintento)';
+          } else {
+            if (p.status === 'UNKNOWN') {
+              setMsg('err', '⚠ No se pudo confirmar: ' + p.message);
+              btn.disabled = false; btn.textContent = 'Reintentar (con cuidado)';
+            } else {
+              setMsg('err', 'El hub rechazó el pago: ' + (p.message || p.response_code_description || p.status || 'sin detalle del hub'));
+              btn.disabled = false; btn.textContent = 'Reintentar cobro';
+            }
+          }
+        });
+      }
+
+      btn.onclick = function () {
+        btn.disabled = true; btn.textContent = 'Creando usuario…'; msg.className = 'msg';
+        // El COMERCIO (server local) crea el usuario con perfil completo → usr-…
+        fetch('/user', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token, name: custName.value.trim(), email: custEmail.value.trim() }),
+        }).then(function (r) { return r.json(); }).then(function (u) {
+          if (!u.user_id) {
+            setMsg('err', 'No se pudo crear el usuario: ' + (u.message || u.error || 'error'));
+            btn.disabled = false; btn.textContent = 'Reintentar'; return;
+          }
+          // fields solo tokeniza y enrola la tarjeta a ese usuario (no lo crea).
+          btn.textContent = 'Tokenizando en SmartFields…';
+          sf.enroll({ userId: u.user_id });
+        });
+      };
+    })();
+  </script>
+</body>
+</html>

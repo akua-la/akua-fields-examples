@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "rm -rf public/examples && cp -r examples public/examples && cp config.js public/",
     "build": "next build",
     "start": "next start"
   },

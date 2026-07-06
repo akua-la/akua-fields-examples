@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# copiados por prebuild desde examples/ y config.js
+public/examples/
+public/config.js

@@ -28,9 +28,10 @@
     <div class="eyebrow">Akua · Fields</div>
     <h1>Ejemplos de integración</h1>
     <p class="lede">Campos de tarjeta embebidos en tu propio checkout, con aislamiento
-    cross-origin (el PAN nunca toca tu página → tu comercio queda en SAQ A). El pago
-    se rutea por Connect Hub. Elegí un ejemplo y mirá el código fuente — cada uno es
-    una página estática autocontenida que podés copiar y customizar.</p>
+    cross-origin y <strong>Dual Encryption obligatorio</strong> (el número se cifra
+    con tu clave RSA dentro del iframe, antes de salir del navegador → nunca viaja en
+    texto plano). El pago se rutea por Connect Hub. Elegí un ejemplo y mirá el código
+    fuente — corré <code>node server.js</code> y listo.</p>
 
     <div class="grid">
       <a class="card" href="examples/store.html">
@@ -44,16 +45,19 @@
     </div>
 
     <div class="flow">
-      <strong>Cómo funciona</strong> — cada ejemplo incluye
-      <code>&lt;script src="…/akua-fields.js"&gt;</code> desde el servicio de Akua Fields,
-      monta <code>#akua-card</code> (un iframe de ese dominio) en tu layout, y tu botón llama
-      <code>sf.pay()</code>. El SDK tokeniza la tarjeta (directo a Akua) y cobra por Connect Hub.
-      Tu página nunca ve el número de tarjeta.
+      <strong>Cómo funciona</strong> — <code>server.js</code> (tu backend de ejemplo) mintea
+      el token y crea/reusa tu clave de cifrado (<code>/token</code>, <code>/encryption-key</code>).
+      Cada ejemplo carga <code>&lt;script src="…/akua-fields.js"&gt;</code> desde el servicio
+      de Akua Fields, monta <code>#akua-card</code> pasando <code>token</code> y
+      <code>encryptionPublicKey</code>, y tu botón llama <code>sf.pay()</code> — el SDK cifra
+      la tarjeta dentro del iframe, tokeniza y cobra por Connect Hub. Tu página nunca ve el
+      número de tarjeta, ni siquiera en el tráfico de red.
     </div>
 
     <div class="foot">
-      Apuntá los ejemplos a tu deploy editando <code>config.js</code>
-      (<code>window.AKUA_SF_BASE</code>). Sandbox: tarjeta <code>4111 1111 1111 1111</code>, venc <code>12/30</code>.
+      1) <code>cp .env.example .env</code> con tus credenciales de sandbox · 2) <code>node server.js</code> ·
+      3) apuntá <code>config.js</code> (<code>window.AKUA_SF_BASE</code>) a tu deploy de Akua Fields.
+      Tarjeta de prueba: <code>4111 1111 1111 1111</code>, venc <code>12/30</code>.
     </div>
   </div>
 </body>

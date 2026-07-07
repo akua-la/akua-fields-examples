@@ -87,28 +87,42 @@
   <script>document.write('<scr'+'ipt src="'+window.AKUA_SF_BASE+'/akua-fields.js"><\/scr'+'ipt>');</script>
   <script>
     var msg = document.getElementById('msg'), out = document.getElementById('out'), pay = document.getElementById('pay');
-    // El JWT lo mintea TU backend (client_credentials). Acá lo tomás de ?token=<jwt>
-    // o de window.AKUA_TOKEN. Los fields NO mintean tokens ni guardan credenciales.
-    var TOKEN = new URLSearchParams(location.search).get('token') || window.AKUA_TOKEN || '';
-    if (!TOKEN) { msg.className = 'msg err'; msg.textContent = 'Falta el token: abrí con ?token=<jwt> (lo mintea tu backend).'; }
-    var sf = AkuaFields.mount('#akua-card', {
-      apiBase: window.AKUA_SF_BASE,
-      token: TOKEN,                   // JWT que minteó tu backend. La marca sale del token/dominio.
-      amount: 100000, currency: 'COP',
-      orderId: 'store-' + Date.now(),
-      onReady:    function () { pay.disabled = false; },
-      onValidity: function (ok) { pay.disabled = !ok; },
-      onResult:   function (r) {
-        out.textContent = JSON.stringify(r, null, 2);
-        if (r.status === 'APPROVED' || r.status === 'AUTHORIZED') {
-          var u = r.user_id ? ' · cliente ' + r.user_id : '';
-          msg.className = 'msg ok'; msg.textContent = '✅ ¡Compra confirmada! Pago ' + r.status + u;
-        } else {
-          msg.className = 'msg err'; msg.textContent = '❌ ' + (r.message || r.error || r.status || 'Pago rechazado');
-        }
-        pay.disabled = false; pay.textContent = 'Pagar $ 100.000';
-      },
+    var sf;
+
+    // El token y la clave de cifrado los sirve TU backend (acá, server.js) —
+    // nunca se mintean en el navegador. Dual Encryption es obligatorio: sin
+    // encryptionPublicKey, mount() no tokeniza.
+    Promise.all([
+      fetch('/token').then(function (r) { return r.json(); }),
+      fetch('/encryption-key').then(function (r) { return r.json(); }),
+    ]).then(function (results) {
+      var t = results[0], k = results[1];
+      if (!t.token || !k.public_key) {
+        msg.className = 'msg err';
+        msg.textContent = 'Faltan credenciales: revisá AKUA_CLIENT_ID/SECRET en tu .env (ver .env.example).';
+        return;
+      }
+      sf = AkuaFields.mount('#akua-card', {
+        apiBase: window.AKUA_SF_BASE,
+        token: t.token,                       // JWT que minteó tu backend. La marca sale del token/dominio.
+        encryptionPublicKey: k.public_key,    // obligatorio
+        amount: 100000, currency: 'COP',
+        orderId: 'store-' + Date.now(),
+        onReady:    function () { pay.disabled = false; },
+        onValidity: function (ok) { pay.disabled = !ok; },
+        onResult:   function (r) {
+          out.textContent = JSON.stringify(r, null, 2);
+          if (r.status === 'APPROVED' || r.status === 'AUTHORIZED') {
+            var u = r.user_id ? ' · cliente ' + r.user_id : '';
+            msg.className = 'msg ok'; msg.textContent = '✅ ¡Compra confirmada! Pago ' + r.status + u;
+          } else {
+            msg.className = 'msg err'; msg.textContent = '❌ ' + (r.message || r.error || r.status || 'Pago rechazado');
+          }
+          pay.disabled = false; pay.textContent = 'Pagar $ 100.000';
+        },
+      });
     });
+
     // userId OPCIONAL: el comercio crea el usuario en SU backend (con perfil completo)
     // y pasa el usr-… acá (ej. ?userId=usr-…). Si viene, la tarjeta se le enrola.
     var USER_ID = new URLSearchParams(location.search).get('userId') || '';

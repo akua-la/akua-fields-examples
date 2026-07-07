@@ -22,18 +22,29 @@
   <!-- 2. cargá el SDK desde ese servicio -->
   <script>document.write('<scr'+'ipt src="'+window.AKUA_SF_BASE+'/akua-fields.js"><\/scr'+'ipt>');</script>
   <script>
-    // 3. montá los campos. El JWT lo mintea TU backend; acá lo tomás de
-    //    ?token=<jwt> o de window.AKUA_TOKEN. Los fields no mintean tokens.
-    var TOKEN = new URLSearchParams(location.search).get('token') || window.AKUA_TOKEN || '';
-    var sf = AkuaFields.mount('#akua-card', {
-      apiBase: window.AKUA_SF_BASE,
-      token: TOKEN,
-      amount: 100000, currency: 'COP',
-      onReady:    function () { pay.disabled = false; },
-      onValidity: function (ok) { pay.disabled = !ok; },
-      onResult:   function (r) { out.textContent = JSON.stringify(r, null, 2); },
+    // 3. El token y la clave de cifrado los sirve TU backend (acá, server.js) —
+    //    nunca se mintean en el navegador. Dual Encryption es obligatorio: sin
+    //    encryptionPublicKey, mount() no tokeniza.
+    Promise.all([
+      fetch('/token').then(function (r) { return r.json(); }),
+      fetch('/encryption-key').then(function (r) { return r.json(); }),
+    ]).then(function (results) {
+      var t = results[0], k = results[1];
+      if (!t.token || !k.public_key) {
+        out.textContent = 'Faltan credenciales: revisá AKUA_CLIENT_ID/SECRET en tu .env (ver .env.example).';
+        return;
+      }
+      var sf = AkuaFields.mount('#akua-card', {
+        apiBase: window.AKUA_SF_BASE,
+        token: t.token,
+        encryptionPublicKey: k.public_key,   // obligatorio
+        amount: 100000, currency: 'COP',
+        onReady:    function () { pay.disabled = false; },
+        onValidity: function (ok) { pay.disabled = !ok; },
+        onResult:   function (r) { out.textContent = JSON.stringify(r, null, 2); },
+      });
+      pay.onclick = function () { pay.disabled = true; sf.pay(); };
     });
-    pay.onclick = function () { pay.disabled = true; sf.pay(); };
   </script>
 </body>
 </html>

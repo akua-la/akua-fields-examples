@@ -91,9 +91,15 @@
     // o de window.AKUA_TOKEN. Los fields NO mintean tokens ni guardan credenciales.
     var TOKEN = new URLSearchParams(location.search).get('token') || window.AKUA_TOKEN || '';
     if (!TOKEN) { msg.className = 'msg err'; msg.textContent = 'Falta el token: abrí con ?token=<jwt> (lo mintea tu backend).'; }
+    // Opcional — Dual Encryption: tu backend crea la clave UNA vez
+    // (POST {tuBase}/v1/encryption/keys, reusar con GET después) y te la
+    // pasa acá (ej. ?encryptionKey=<PEM>). Sin esto, sigue funcionando
+    // igual (texto plano) — es un endurecimiento extra, no un requisito.
+    var ENCRYPTION_KEY = new URLSearchParams(location.search).get('encryptionKey') || window.AKUA_ENCRYPTION_KEY || '';
     var sf = AkuaFields.mount('#akua-card', {
       apiBase: window.AKUA_SF_BASE,
       token: TOKEN,                   // JWT que minteó tu backend. La marca sale del token/dominio.
+      encryptionPublicKey: ENCRYPTION_KEY || undefined,
       amount: 100000, currency: 'COP',
       orderId: 'store-' + Date.now(),
       onReady:    function () { pay.disabled = false; },

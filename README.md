@@ -62,6 +62,38 @@ Snippet esencial:
 </script>
 ```
 
+## Opcional — Dual Encryption
+
+Endurecimiento extra: la tarjeta se cifra (RSA-OAEP-256) **dentro del iframe**,
+antes de salir del navegador — ni siquiera viaja en texto plano por el canal
+TLS hacia Akua Fields. No es un requisito (el aislamiento cross-origin ya te
+deja en SAQ A), pero si tu backend ya tiene la clave, pasarla es gratis.
+
+1. Tu backend crea el par de claves **una sola vez** (se rota una vez al año),
+   con el mismo Bearer token que usa para todo lo demás — sin headers extra:
+   ```bash
+   curl -X POST https://TU-BASE-AKUA/v1/encryption/keys \
+     -H "Authorization: Bearer <ACCESS_TOKEN>"
+   # → 201 { "public_key": "-----BEGIN PUBLIC KEY-----\n…", "kid": "key_…", "valid_until": "…" }
+   ```
+   ⚠️ Ese `POST` **reemplaza** la clave activa si ya existe una — no lo llames en
+   cada arranque. En arranques posteriores, traé la misma clave con `GET`:
+   ```bash
+   curl https://TU-BASE-AKUA/v1/encryption/keys -H "Authorization: Bearer <ACCESS_TOKEN>"
+   ```
+2. Cacheá el `public_key` (PEM) de tu lado y pasalo a `mount()` como
+   `encryptionPublicKey`:
+   ```html
+   var sf = AkuaFields.mount('#akua-card', {
+     apiBase: 'https://TU-AKUA-FIELDS.vercel.app',
+     token: '<JWT>',
+     encryptionPublicKey: '<PEM que guardaste arriba>',
+     amount: 100000, currency: 'COP',
+   });
+   ```
+   `examples/store.html` y `examples/minimal.html` ya soportan probarlo pasando
+   `?encryptionKey=<PEM URL-encoded>` en la URL (o `window.AKUA_ENCRYPTION_KEY`).
+
 ## Deploy (Vercel, estático)
 
 ```bash

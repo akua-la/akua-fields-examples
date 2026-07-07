@@ -25,9 +25,14 @@
     // 3. montá los campos. El JWT lo mintea TU backend; acá lo tomás de
     //    ?token=<jwt> o de window.AKUA_TOKEN. Los fields no mintean tokens.
     var TOKEN = new URLSearchParams(location.search).get('token') || window.AKUA_TOKEN || '';
+    // Opcional — Dual Encryption: tu backend crea la clave UNA vez
+    // (POST {tuBase}/v1/encryption/keys, reusar con GET después) y te la
+    // pasa acá. Sin esto, sigue funcionando igual (texto plano).
+    var ENCRYPTION_KEY = new URLSearchParams(location.search).get('encryptionKey') || window.AKUA_ENCRYPTION_KEY || '';
     var sf = AkuaFields.mount('#akua-card', {
       apiBase: window.AKUA_SF_BASE,
       token: TOKEN,
+      encryptionPublicKey: ENCRYPTION_KEY || undefined,
       amount: 100000, currency: 'COP',
       onReady:    function () { pay.disabled = false; },
       onValidity: function (ok) { pay.disabled = !ok; },
